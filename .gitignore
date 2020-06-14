@@ -1,0 +1,7 @@
+env
+.env
+runtime
+vendor
+composer.lock
+*.gz
+config.conf

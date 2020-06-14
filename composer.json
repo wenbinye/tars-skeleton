@@ -1,0 +1,56 @@
+{
+    "name": "wenbinye/tars-skeleton",
+    "type": "project",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": "^7.2",
+        "ext-json": "*",
+        "wenbinye/tars": "^0.1"
+    },
+    "require-dev": {
+        "composer/composer": "^1.10",
+        "kuiper/component-installer": "^0.1",
+        "roave/security-advisories": "dev-master",
+        "wenbinye/tars-gen": "^0.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "wenbinye\\tars\\installer\\": "installer"
+        }
+    },
+    "scripts": {
+        "pre-install-cmd": "wenbinye\\tars\\installer\\Script::install",
+        "pre-update-cmd": "wenbinye\\tars\\installer\\Script::install",
+        "package": "wenbinye\\tars\\server\\ServerApplication::package",
+        "container-config": "kuiper\\component\\ComponentInstaller::generate",
+        "gen": "./vendor/bin/tars-gen",
+        "serve": "@php src/index.php --config config.conf"
+    },
+    "extra": {
+        "kuiper": {
+            "config-file": "src/container.php",
+            "whitelist": ["wenbinye/tars"]
+        },
+        "tars": {
+            "manifest": [
+                "composer.json",
+                {
+                    "in": "src"
+                },
+                {
+                    "followLinks": true,
+                    "exclude": [
+                        "phpunit",
+                        "symfony/finder",
+                        "kuiper/vendor",
+                        "tars/vendor",
+                        "tars-gen"
+                    ],
+                    "in": "vendor"
+                }
+            ]
+        }
+    }
+}
