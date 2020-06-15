@@ -31,7 +31,7 @@
 				endpoint=tcp -h {tarsnode} -p 18081 -t 60000
 				handlegroup={AppName}.{ServerName}.objAdapter
 				maxconns=200000
-				protocol=tars
+				protocol={protocol}
 				queuecap=10000
 				queuetimeout=60000
 				servant={AppName}.{ServerName}.obj
