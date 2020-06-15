@@ -2,15 +2,14 @@
 
 namespace wenbinye\tars\installer;
 
-use Composer\Package\BasePackage;
-use Composer\Package\Link;
-use Composer\Package\Version\VersionParser;
-use kuiper\component\ComponentInstaller;
 use Composer\Composer;
 use Composer\Factory;
 use Composer\IO\IOInterface;
 use Composer\Json\JsonFile;
+use Composer\Package\BasePackage;
+use Composer\Package\Link;
 use Composer\Package\RootPackageInterface;
+use Composer\Package\Version\VersionParser;
 use Composer\Script\Event;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -97,6 +96,7 @@ class Script
 
     private static $PLACEHOLDER_FILES = [
         "config.conf.example",
+        "src/container.php",
         "src/controllers/IndexController.php"
     ];
 
@@ -150,7 +150,6 @@ class Script
         $installer->createConfig();
         $installer->updateRootPackage();
         $installer->finalizePackage();
-        ComponentInstaller::generate();
     }
 
     /**
