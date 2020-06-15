@@ -2,6 +2,7 @@
 
 namespace wenbinye\tars\installer;
 
+use kuiper\component\ComponentInstaller;
 use Composer\Composer;
 use Composer\Factory;
 use Composer\IO\IOInterface;
@@ -126,6 +127,7 @@ class Script
         $installer->createConfig();
         $installer->updateRootPackage();
         $installer->finalizePackage();
+        ComponentInstaller::generate();
     }
 
     /**
