@@ -2,6 +2,9 @@
 
 namespace wenbinye\tars\installer;
 
+use Composer\Package\BasePackage;
+use Composer\Package\Link;
+use Composer\Package\Version\VersionParser;
 use kuiper\component\ComponentInstaller;
 use Composer\Composer;
 use Composer\Factory;
@@ -46,6 +49,21 @@ class Script
     private $composerDefinition;
 
     /**
+     * @var \Composer\Package\Link[]
+     */
+    private $composerRequires;
+
+    /**
+     * @var \Composer\Package\Link[]
+     */
+    private $composerDevRequires;
+
+    /**
+     * @var array
+     */
+    private $stabilityFlags;
+
+    /**
      * @var string
      */
     private $protocol;
@@ -61,7 +79,7 @@ class Script
     private $appName;
 
     /**
-     * @var string
+    + * @var string
      */
     private $serverName;
 
@@ -69,7 +87,8 @@ class Script
         self::PROTOCOL_HTTP => [
             'slim/slim' => '^4.0'
         ],
-        self::PROTOCOL_TARS => []
+        self::PROTOCOL_TARS => [
+        ]
     ];
 
     private static $INSTALLER_DEPS = [
@@ -109,6 +128,9 @@ class Script
 
         // Get root package or root alias package
         $this->rootPackage = $composer->getPackage();
+        $this->composerRequires    = $this->rootPackage->getRequires();
+        $this->composerDevRequires = $this->rootPackage->getDevRequires();
+        $this->stabilityFlags = $this->rootPackage->getStabilityFlags();
     }
 
     public static function install(Event $event): void
@@ -124,6 +146,7 @@ class Script
         $installer->replacePlaceHolder();
         $installer->setupForProtocol();
         $installer->fixComposerDefinition();
+        $installer->addPackages();
         $installer->createConfig();
         $installer->updateRootPackage();
         $installer->finalizePackage();
@@ -135,21 +158,21 @@ class Script
      */
     private function updateRootPackage() : void
     {
-        $this->rootPackage->setRequires($this->composerDefinition['require']);
-        $this->rootPackage->setDevRequires($this->composerDefinition['require-dev']);
+        $this->rootPackage->setRequires($this->composerRequires);
+        $this->rootPackage->setDevRequires($this->composerDevRequires);
+        $this->rootPackage->setStabilityFlags($this->stabilityFlags);
         $this->rootPackage->setAutoload($this->composerDefinition['autoload']);
         $this->rootPackage->setDevAutoload($this->composerDefinition['autoload-dev']);
         $this->rootPackage->setExtra($this->composerDefinition['extra'] ?? []);
     }
 
-    private function fixComposerDefinition()
+    private function fixComposerDefinition(): void
     {
         $this->io->write('<info>Removing installer development dependencies</info>');
         foreach (self::$INSTALLER_DEPS as $devDependency) {
-            unset($this->composerDefinition['require-dev'][$devDependency]);
-        }
-        foreach (self::$REQUIRES[$this->protocol] as $package  => $version) {
-            $this->composerDefinition['require'][$package] = $version;
+            unset($this->composerDefinition['require-dev'][$devDependency],
+            $this->composerDevRequires[$devDependency],
+            $this->stabilityFlags[$devDependency]);
         }
 
         $this->io->write('<info>Remove installer</info>');
@@ -164,7 +187,47 @@ class Script
         unset($this->composerDefinition['scripts']['pre-install-cmd']);
     }
 
-    private function finalizePackage()
+    private function addPackages(): void
+    {
+        foreach (self::$REQUIRES[$this->protocol] as $packageName => $packageVersion) {
+            $this->io->write(sprintf(
+                '  - Adding package <info>%s</info> (<comment>%s</comment>)',
+                $packageName,
+                $packageVersion
+            ));
+
+            // Get the version constraint
+            $versionParser = new VersionParser();
+            $constraint = $versionParser->parseConstraints($packageVersion);
+
+            // Create package link
+            $link = new Link('__root__', $packageName, $constraint, 'requires', $packageVersion);
+
+            unset($this->composerDefinition['require-dev'][$packageName],
+                $this->composerDevRequires[$packageName]);
+
+            $this->composerDefinition['require'][$packageName] = $packageVersion;
+            $this->composerRequires[$packageName] = $link;
+
+            // Set package stability if needed
+            switch (VersionParser::parseStability($packageVersion)) {
+                case 'dev':
+                    $this->stabilityFlags[$packageName] = BasePackage::STABILITY_DEV;
+                    break;
+                case 'alpha':
+                    $this->stabilityFlags[$packageName] = BasePackage::STABILITY_ALPHA;
+                    break;
+                case 'beta':
+                    $this->stabilityFlags[$packageName] = BasePackage::STABILITY_BETA;
+                    break;
+                case 'RC':
+                    $this->stabilityFlags[$packageName] = BasePackage::STABILITY_RC;
+                    break;
+            }
+        }
+    }
+
+    private function finalizePackage(): void
     {
         // Update composer definition
         $this->composerJson->write($this->composerDefinition);
