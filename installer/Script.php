@@ -96,7 +96,6 @@ class Script
 
     private static $PLACEHOLDER_FILES = [
         "config.conf.example",
-        "src/container.php",
         "src/controllers/IndexController.php"
     ];
 
