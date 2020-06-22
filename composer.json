@@ -31,7 +31,8 @@
     "extra": {
         "kuiper": {
             "config-file": "src/container.php",
-            "whitelist": ["wenbinye/tars"]
+            "whitelist": ["wenbinye/tars"],
+            "blacklist": ["kuiper/kuiper"]
         },
         "tars": {
             "manifest": [

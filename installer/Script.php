@@ -349,6 +349,11 @@ class Script
                 ]
             ]
         ];
+        $this->composerDefinition['extra']['kuiper']['configuration'] = [
+            "kuiper\\cache\\CacheConfiguration",
+            "kuiper\\web\\WebConfiguration",
+            "kuiper\\web\\http\\DiactorosHttpMessageFactoryConfiguration"
+        ];
         $this->fileSystem->remove("tars/servant");
     }
 
