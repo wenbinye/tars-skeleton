@@ -35,23 +35,6 @@
             "blacklist": ["kuiper/kuiper"]
         },
         "tars": {
-            "manifest": [
-                "composer.json",
-                {
-                    "in": "src"
-                },
-                {
-                    "followLinks": true,
-                    "exclude": [
-                        "phpunit",
-                        "symfony/finder",
-                        "kuiper/vendor",
-                        "tars/vendor",
-                        "tars-gen"
-                    ],
-                    "in": "vendor"
-                }
-            ]
         }
     }
 }

@@ -2,8 +2,5 @@
 
 return [
     "application" => [
-        "web" => [
-            "framework" => 'slim'
-        ]
     ]
 ];
