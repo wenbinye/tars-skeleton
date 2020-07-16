@@ -65,6 +65,11 @@ class Script
     /**
      * @var string
      */
+    private $packageName;
+
+    /**
+     * @var string
+     */
     private $protocol;
 
     /**
@@ -78,7 +83,7 @@ class Script
     private $appName;
 
     /**
-    + * @var string
+     * + * @var string
      */
     private $serverName;
 
@@ -127,7 +132,7 @@ class Script
 
         // Get root package or root alias package
         $this->rootPackage = $composer->getPackage();
-        $this->composerRequires    = $this->rootPackage->getRequires();
+        $this->composerRequires = $this->rootPackage->getRequires();
         $this->composerDevRequires = $this->rootPackage->getDevRequires();
         $this->stabilityFlags = $this->rootPackage->getStabilityFlags();
     }
@@ -137,6 +142,7 @@ class Script
         $installer = new self($event->getIO(), $event->getComposer());
 
         $installer->io->write('<info>Setting up optional packages</info>');
+        $installer->packageName = $installer->askPackageName();
         $installer->protocol = $installer->askProtocol();
         $installer->namespace = $installer->askNamespace();
         $installer->appName = $installer->askAppName();
@@ -154,7 +160,7 @@ class Script
     /**
      * Update the root package based on current state.
      */
-    private function updateRootPackage() : void
+    private function updateRootPackage(): void
     {
         $this->rootPackage->setRequires($this->composerRequires);
         $this->rootPackage->setDevRequires($this->composerDevRequires);
@@ -169,11 +175,12 @@ class Script
         $this->io->write('<info>Removing installer development dependencies</info>');
         foreach (self::$INSTALLER_DEPS as $devDependency) {
             unset($this->composerDefinition['require-dev'][$devDependency],
-            $this->composerDevRequires[$devDependency],
-            $this->stabilityFlags[$devDependency]);
+                $this->composerDevRequires[$devDependency],
+                $this->stabilityFlags[$devDependency]);
         }
 
         $this->io->write('<info>Remove installer</info>');
+        $this->composerDefinition['name'] = $this->packageName;
         $this->composerDefinition['autoload']['psr-4'][$this->namespace . '\\'] = 'src/';
         $this->composerDefinition['autoload-dev']['psr-4'][$this->namespace . '\\'] = 'tests/';
 
@@ -232,16 +239,27 @@ class Script
         $this->fileSystem->remove($this->projectRoot . '/installer');
     }
 
+    private function askPackageName(): string
+    {
+        $defaultNs = get_current_user() . '/' . basename(getcwd());
+        $query = ["<question>Package name (<vendor>/<name>)</question><comment>($defaultNs)</comment>: "];
+
+        while (true) {
+            $answer = $this->io->ask(implode($query), $defaultNs);
+            if ($this->isValidPackage($answer)) {
+                return $answer;
+            }
+            $this->io->write('<error>Invalid package name</error>');
+        }
+    }
+
     private function askProtocol(): string
     {
         $query = [
-            sprintf(
-                "\n  <question>%s</question>\n",
-                'What type of protocol would you like?'
-            ),
-            "  [<comment>1</comment>] Http\n",
-            "  [<comment>2</comment>] Tars\n",
-            '  Make your selection <comment>(2)</comment>: ',
+            "<question>Communicate protocol</question>: \n",
+            "[<comment>1</comment>] Http\n",
+            "[<comment>2</comment>] Tars\n",
+            'Make your selection <comment>(2)</comment>: ',
         ];
 
         while (true) {
@@ -261,12 +279,7 @@ class Script
     private function askNamespace(): string
     {
         $defaultNs = basename(getcwd());
-        $query = [
-            sprintf(
-                "\n  <question>%s</question><comment>(%s)</comment>: \n",
-                'Which the psr-4 namespace to use?', $defaultNs
-            )
-        ];
+        $query = ["<question>Namespace</question><comment>($defaultNs)</comment>: "];
 
         while (true) {
             $answer = $this->io->ask(implode($query), $defaultNs);
@@ -280,22 +293,22 @@ class Script
     private function askAppName(): string
     {
         while (true) {
-            $answer = $this->io->ask("\n  <question>What app name?</question>: \n");
+            $answer = $this->io->ask("<question>Tars application name</question>: ");
             if ($this->isValidName($answer)) {
                 return $answer;
             }
-            $this->io->write('<error>Invalid app name</error>');
+            $this->io->write('<error>Invalid app name, it should be matching \w+</error>');
         }
     }
 
     private function askServerName(): string
     {
         while (true) {
-            $answer = $this->io->ask("\n  <question>What server name?</question>: \n");
+            $answer = $this->io->ask("<question>Tars server name</question>: ");
             if ($this->isValidName($answer)) {
                 return $answer;
             }
-            $this->io->write('<error>Invalid server name</error>');
+            $this->io->write('<error>Invalid server name, it should be matching \w+</error>');
         }
     }
 
@@ -307,6 +320,11 @@ class Script
     private function isValidName(string $answer): bool
     {
         return (bool)preg_match('/^\w+$/', $answer);
+    }
+
+    private function isValidPackage(string $packageName): bool
+    {
+        return (bool)preg_match("#[a-z0-9_.-]+/[a-z0-9_.-]+#", $packageName);
     }
 
     private function replacePlaceHolder(): void
