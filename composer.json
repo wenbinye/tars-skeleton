@@ -20,6 +20,8 @@
             "wenbinye\\tars\\installer\\": "installer"
         }
     },
+    "autoload-dev": {
+    },
     "scripts": {
         "pre-install-cmd": "wenbinye\\tars\\installer\\Script::install",
         "pre-update-cmd": "wenbinye\\tars\\installer\\Script::install",
